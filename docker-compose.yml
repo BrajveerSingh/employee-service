@@ -1,0 +1,82 @@
+version: "3.8"
+
+services:
+  mysqldb:
+    container_name: mysqldb_new
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: employee_db
+  rabittmq:
+    container_name: rabittmq_new
+    image: rabbitmq
+    ports:
+      - "5672:5672"
+  employee-service:
+    container_name: employee-service_new
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mysqldb
+      - eureka-server
+      - config-server
+      - rabittmq
+    environment:
+      SPRING_R2DBC_URL: r2dbc:mysql://localhost:3306/employee_db
+      SPRING_R2DBC_USERNAME: root
+      SPRING_R2DBC_PASSWORD: root
+    networks:
+      springboot-mysql-net:
+  department-service:
+    container_name: department-service_new
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    depends_on:
+      - mysqldb
+      - eureka-server
+      - config-server
+    environment:
+      SPRING_R2DBC_URL: r2dbc:mysql://localhost:3306/department_db
+      SPRING_R2DBC_USERNAME: root
+      SPRING_R2DBC_PASSWORD: root
+    networks:
+      springboot-mysql-net:
+  api-gateway:
+    container_name: api-gateway_new
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9191:9191"
+    depends_on:
+      - eureka-server
+    networks:
+      springboot-mysql-net:
+  config-server:
+    container_name: config-server_new
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    networks:
+      springboot-mysql-net:
+  eureka-server:
+    container_name: eureka-server_new
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    networks:
+      springboot-mysql-net:
+
+
+networks:
+  springboot-mysql-net:
